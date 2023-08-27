@@ -48,13 +48,14 @@ def loadCSV(path)
 	return data
 end
 
-def ensureDatasetWithKeysForInject(dataSet, _dicSet)
+def ensureDatasetWithKeysForInject(dataSet, keyCols, _dicSet)
 	result = []
 	dicSet = _dicSet.to_h
-  dataSet.to_h.each do |file, dataArray|
+	dataSet.to_h.each do |file, dataArray|
+		theKeyCol = keyCols[file]
 		dataArray.each do |aData|
-			if dicSet.include?(aData[0]) then
-				aData.push( dicSet[aData[0]] )
+			if dicSet.include?(aData[theKeyCol]) then
+				aData.push( dicSet[aData[theKeyCol]] )
 			end
 			result.push(aData)
 		end
@@ -71,9 +72,9 @@ options = {
 }
 
 opt_parser = OptionParser.new do |opts|
-	opts.banner = "Usage: --source=dataset1.csv;dataset2.csv"
+	opts.banner = "Usage: --source=dataset1.csv"
 
-	opts.on("-s", "--source=", "Specify source files (data1.csv,data2.csv)") do |source|
+	opts.on("-s", "--source=", "Specify source files (filename.csv:n key is the n col e.g. data.csv:1 :1 is default") do |source|
 		options[:source] = source
 	end
 
@@ -91,10 +92,15 @@ end
 
 
 # load csv datas
+keyCols = {}
 files = options[:source].to_s.split(",")
 dataSet = {}
-files.each do |aFile|
+files.each do |theFile|
+	theFile = theFile.to_s.split(":")
+	aFile = theFile[0]
+	theKeyCol = theFile[1] ? theFile[1].to_i-1 : 0
 	dataSet[aFile] = loadCSV(aFile)
+	keyCols[aFile] = theKeyCol
 end
 
 dicSet = {}
@@ -104,7 +110,7 @@ end
 
 # result
 result = []
-result = ensureDatasetWithKeysForInject(dataSet, dicSet)
+result = ensureDatasetWithKeysForInject(dataSet, keyCols, dicSet)
 
 i = 0
 result.each do |aCols|
